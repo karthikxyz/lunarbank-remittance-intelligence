@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import type { Analytics, Corridor, Processor } from "./types";
 
@@ -522,9 +522,15 @@ function Simulator({
   target: Processor;
 }) {
   const [shift, setShift] = useState(40);
+  const sliderRef = useRef<HTMLInputElement>(null);
   const minimumShift = 10;
   const maximumShift = 100;
   const shiftStep = 5;
+  const updateShift = (nextValue: number) => {
+    const nextShift = Math.min(maximumShift, Math.max(minimumShift, nextValue));
+    if (sliderRef.current) sliderRef.current.value = String(nextShift);
+    setShift(nextShift);
+  };
   const sourceTpv = corridor.tpv * source.volume_share / 100;
   const rateDifference = Math.max(0, source.avg_take_rate - target.avg_take_rate);
   const observedSourceSavings = sourceTpv * rateDifference / 100;
@@ -551,25 +557,28 @@ function Simulator({
             type="button"
             aria-label="Decrease rerouted volume by 5%"
             disabled={shift === minimumShift}
-            onClick={() => setShift((value) => Math.max(minimumShift, value - shiftStep))}
+            onClick={() => updateShift(shift - shiftStep)}
           >
             −
           </button>
           <input
             id="shift"
+            ref={sliderRef}
             type="range"
             min={minimumShift}
             max={maximumShift}
             step={shiftStep}
-            value={shift}
+            defaultValue={shift}
             aria-valuetext={`${shift}% of volume`}
-            onInput={(event) => setShift(Number(event.currentTarget.value))}
+            onInput={(event) => updateShift(Number(event.currentTarget.value))}
+            onChange={(event) => updateShift(Number(event.currentTarget.value))}
+            onPointerUp={(event) => updateShift(Number(event.currentTarget.value))}
           />
           <button
             type="button"
             aria-label="Increase rerouted volume by 5%"
             disabled={shift === maximumShift}
-            onClick={() => setShift((value) => Math.min(maximumShift, value + shiftStep))}
+            onClick={() => updateShift(shift + shiftStep)}
           >
             +
           </button>
