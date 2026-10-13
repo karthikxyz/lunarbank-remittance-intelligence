@@ -563,7 +563,7 @@ function Simulator({
             step={shiftStep}
             value={shift}
             aria-valuetext={`${shift}% of volume`}
-            onChange={(event) => setShift(Number(event.currentTarget.value))}
+            onInput={(event) => setShift(Number(event.currentTarget.value))}
           />
           <button
             type="button"
