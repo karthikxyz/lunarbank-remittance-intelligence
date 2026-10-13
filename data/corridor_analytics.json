@@ -1,0 +1,632 @@
+{
+  "generated_at": "2026-10-13T03:36:11.229703+00:00",
+  "period": "30 days",
+  "summary": {
+    "tpv": 11678468.24,
+    "transactions": 5993,
+    "avg_take_rate": 2.191,
+    "total_cost": 255855.92,
+    "potential_savings": 83495.65,
+    "inefficient_corridors": 4
+  },
+  "corridors": [
+    {
+      "corridor": "MXN->COP",
+      "tpv": 1697187.93,
+      "transactions": 879,
+      "avg_cost": 46.62,
+      "avg_take_rate": 2.415,
+      "cheapest_processor": "NovaRemit",
+      "potential_savings": 15405.16,
+      "inefficient_processor": "AndesPay",
+      "is_inefficient": true,
+      "processors": [
+        {
+          "name": "NovaRemit",
+          "transactions": 183,
+          "tpv": 374997.06,
+          "volume_share": 22.1,
+          "avg_cost": 31.18,
+          "avg_take_rate": 1.522,
+          "explicit_fees": 786.71,
+          "fx_markup": 4832.63,
+          "capital_cost": 86.56,
+          "avg_delay": 27.8
+        },
+        {
+          "name": "PacificWire",
+          "transactions": 114,
+          "tpv": 208345.36,
+          "volume_share": 12.3,
+          "avg_cost": 38.78,
+          "avg_take_rate": 2.122,
+          "explicit_fees": 661.24,
+          "fx_markup": 3680.64,
+          "capital_cost": 78.6,
+          "avg_delay": 46.6
+        },
+        {
+          "name": "PampaLink",
+          "transactions": 106,
+          "tpv": 202835.99,
+          "volume_share": 12.0,
+          "avg_cost": 45.24,
+          "avg_take_rate": 2.364,
+          "explicit_fees": 514.23,
+          "fx_markup": 4225.75,
+          "capital_cost": 55.97,
+          "avg_delay": 34.1
+        },
+        {
+          "name": "SelvaMoney",
+          "transactions": 100,
+          "tpv": 191054.61,
+          "volume_share": 11.3,
+          "avg_cost": 51.64,
+          "avg_take_rate": 2.703,
+          "explicit_fees": 551.23,
+          "fx_markup": 4552.77,
+          "capital_cost": 60.45,
+          "avg_delay": 39.2
+        },
+        {
+          "name": "AndesPay",
+          "transactions": 376,
+          "tpv": 719954.91,
+          "volume_share": 42.4,
+          "avg_cost": 55.56,
+          "avg_take_rate": 2.902,
+          "explicit_fees": 1416.14,
+          "fx_markup": 19330.75,
+          "capital_cost": 145.12,
+          "avg_delay": 23.7
+        }
+      ]
+    },
+    {
+      "corridor": "BRL->COP",
+      "tpv": 1229625.44,
+      "transactions": 619,
+      "avg_cost": 46.91,
+      "avg_take_rate": 2.362,
+      "cheapest_processor": "NovaRemit",
+      "potential_savings": 9031.62,
+      "inefficient_processor": "AndesPay",
+      "is_inefficient": true,
+      "processors": [
+        {
+          "name": "NovaRemit",
+          "transactions": 120,
+          "tpv": 223987.88,
+          "volume_share": 18.2,
+          "avg_cost": 30.62,
+          "avg_take_rate": 1.64,
+          "explicit_fees": 512.85,
+          "fx_markup": 3109.88,
+          "capital_cost": 51.55,
+          "avg_delay": 28.6
+        },
+        {
+          "name": "SelvaMoney",
+          "transactions": 104,
+          "tpv": 207300.22,
+          "volume_share": 16.9,
+          "avg_cost": 41.93,
+          "avg_take_rate": 2.103,
+          "explicit_fees": 569.51,
+          "fx_markup": 3729.2,
+          "capital_cost": 61.68,
+          "avg_delay": 37.1
+        },
+        {
+          "name": "PampaLink",
+          "transactions": 68,
+          "tpv": 138070.84,
+          "volume_share": 11.2,
+          "avg_cost": 47.64,
+          "avg_take_rate": 2.346,
+          "explicit_fees": 329.23,
+          "fx_markup": 2877.16,
+          "capital_cost": 33.41,
+          "avg_delay": 29.3
+        },
+        {
+          "name": "PacificWire",
+          "transactions": 78,
+          "tpv": 152008.97,
+          "volume_share": 12.4,
+          "avg_cost": 51.55,
+          "avg_take_rate": 2.645,
+          "explicit_fees": 459.94,
+          "fx_markup": 3507.26,
+          "capital_cost": 54.01,
+          "avg_delay": 44.0
+        },
+        {
+          "name": "AndesPay",
+          "transactions": 249,
+          "tpv": 508257.53,
+          "volume_share": 41.3,
+          "avg_cost": 55.2,
+          "avg_take_rate": 2.704,
+          "explicit_fees": 948.06,
+          "fx_markup": 12701.3,
+          "capital_cost": 94.59,
+          "avg_delay": 22.9
+        }
+      ]
+    },
+    {
+      "corridor": "BRL->ARS",
+      "tpv": 1444904.26,
+      "transactions": 748,
+      "avg_cost": 45.16,
+      "avg_take_rate": 2.338,
+      "cheapest_processor": "PampaLink",
+      "potential_savings": 13016.94,
+      "inefficient_processor": "NovaRemit",
+      "is_inefficient": true,
+      "processors": [
+        {
+          "name": "PampaLink",
+          "transactions": 173,
+          "tpv": 375748.35,
+          "volume_share": 26.0,
+          "avg_cost": 31.63,
+          "avg_take_rate": 1.456,
+          "explicit_fees": 836.53,
+          "fx_markup": 4508.03,
+          "capital_cost": 127.15,
+          "avg_delay": 41.4
+        },
+        {
+          "name": "SelvaMoney",
+          "transactions": 131,
+          "tpv": 246998.43,
+          "volume_share": 17.1,
+          "avg_cost": 39.93,
+          "avg_take_rate": 2.118,
+          "explicit_fees": 722.4,
+          "fx_markup": 4407.44,
+          "capital_cost": 101.2,
+          "avg_delay": 48.2
+        },
+        {
+          "name": "PacificWire",
+          "transactions": 97,
+          "tpv": 189274.52,
+          "volume_share": 13.1,
+          "avg_cost": 46.86,
+          "avg_take_rate": 2.402,
+          "explicit_fees": 583.22,
+          "fx_markup": 3879.96,
+          "capital_cost": 82.49,
+          "avg_delay": 51.9
+        },
+        {
+          "name": "AndesPay",
+          "transactions": 87,
+          "tpv": 182235.08,
+          "volume_share": 12.6,
+          "avg_cost": 54.5,
+          "avg_take_rate": 2.602,
+          "explicit_fees": 331.43,
+          "fx_markup": 4356.56,
+          "capital_cost": 53.15,
+          "avg_delay": 35.2
+        },
+        {
+          "name": "NovaRemit",
+          "transactions": 260,
+          "tpv": 450647.88,
+          "volume_share": 31.2,
+          "avg_cost": 53.05,
+          "avg_take_rate": 3.06,
+          "explicit_fees": 1089.83,
+          "fx_markup": 12562.92,
+          "capital_cost": 139.19,
+          "avg_delay": 37.4
+        }
+      ]
+    },
+    {
+      "corridor": "ARS->CLP",
+      "tpv": 1348783.31,
+      "transactions": 677,
+      "avg_cost": 42.87,
+      "avg_take_rate": 2.152,
+      "cheapest_processor": "PacificWire",
+      "potential_savings": 7279.61,
+      "inefficient_processor": null,
+      "is_inefficient": false,
+      "processors": [
+        {
+          "name": "PacificWire",
+          "transactions": 253,
+          "tpv": 480534.67,
+          "volume_share": 35.6,
+          "avg_cost": 31.26,
+          "avg_take_rate": 1.646,
+          "explicit_fees": 1482.92,
+          "fx_markup": 6257.68,
+          "capital_cost": 167.01,
+          "avg_delay": 42.1
+        },
+        {
+          "name": "NovaRemit",
+          "transactions": 143,
+          "tpv": 277038.7,
+          "volume_share": 20.5,
+          "avg_cost": 36.08,
+          "avg_take_rate": 1.862,
+          "explicit_fees": 613.04,
+          "fx_markup": 4476.17,
+          "capital_cost": 69.93,
+          "avg_delay": 29.8
+        },
+        {
+          "name": "PampaLink",
+          "transactions": 96,
+          "tpv": 183128.39,
+          "volume_share": 13.6,
+          "avg_cost": 47.2,
+          "avg_take_rate": 2.474,
+          "explicit_fees": 462.69,
+          "fx_markup": 4016.4,
+          "capital_cost": 51.64,
+          "avg_delay": 33.8
+        },
+        {
+          "name": "AndesPay",
+          "transactions": 89,
+          "tpv": 209817.79,
+          "volume_share": 15.6,
+          "avg_cost": 61.54,
+          "avg_take_rate": 2.61,
+          "explicit_fees": 356.56,
+          "fx_markup": 5084.95,
+          "capital_cost": 35.31,
+          "avg_delay": 20.6
+        },
+        {
+          "name": "SelvaMoney",
+          "transactions": 96,
+          "tpv": 198263.76,
+          "volume_share": 14.7,
+          "avg_cost": 61.94,
+          "avg_take_rate": 2.999,
+          "explicit_fees": 524.76,
+          "fx_markup": 5360.44,
+          "capital_cost": 61.09,
+          "avg_delay": 37.3
+        }
+      ]
+    },
+    {
+      "corridor": "PEN->MXN",
+      "tpv": 1094654.67,
+      "transactions": 564,
+      "avg_cost": 41.34,
+      "avg_take_rate": 2.13,
+      "cheapest_processor": "AndesPay",
+      "potential_savings": 5860.8,
+      "inefficient_processor": null,
+      "is_inefficient": false,
+      "processors": [
+        {
+          "name": "AndesPay",
+          "transactions": 206,
+          "tpv": 400598.74,
+          "volume_share": 36.6,
+          "avg_cost": 31.46,
+          "avg_take_rate": 1.618,
+          "explicit_fees": 775.87,
+          "fx_markup": 5626.05,
+          "capital_cost": 79.63,
+          "avg_delay": 23.0
+        },
+        {
+          "name": "SelvaMoney",
+          "transactions": 96,
+          "tpv": 194111.96,
+          "volume_share": 17.7,
+          "avg_cost": 42.24,
+          "avg_take_rate": 2.089,
+          "explicit_fees": 523.76,
+          "fx_markup": 3468.43,
+          "capital_cost": 63.3,
+          "avg_delay": 38.2
+        },
+        {
+          "name": "NovaRemit",
+          "transactions": 108,
+          "tpv": 221839.54,
+          "volume_share": 20.3,
+          "avg_cost": 47.98,
+          "avg_take_rate": 2.336,
+          "explicit_fees": 472.77,
+          "fx_markup": 4652.78,
+          "capital_cost": 56.52,
+          "avg_delay": 29.7
+        },
+        {
+          "name": "PacificWire",
+          "transactions": 66,
+          "tpv": 112903.81,
+          "volume_share": 10.3,
+          "avg_cost": 45.34,
+          "avg_take_rate": 2.65,
+          "explicit_fees": 383.9,
+          "fx_markup": 2570.54,
+          "capital_cost": 37.71,
+          "avg_delay": 41.0
+        },
+        {
+          "name": "PampaLink",
+          "transactions": 88,
+          "tpv": 165200.62,
+          "volume_share": 15.1,
+          "avg_cost": 52.34,
+          "avg_take_rate": 2.788,
+          "explicit_fees": 415.0,
+          "fx_markup": 4149.78,
+          "capital_cost": 41.22,
+          "avg_delay": 31.7
+        }
+      ]
+    },
+    {
+      "corridor": "USD->MXN",
+      "tpv": 2101503.33,
+      "transactions": 1090,
+      "avg_cost": 40.8,
+      "avg_take_rate": 2.116,
+      "cheapest_processor": "AndesPay",
+      "potential_savings": 17487.12,
+      "inefficient_processor": "NovaRemit",
+      "is_inefficient": true,
+      "processors": [
+        {
+          "name": "AndesPay",
+          "transactions": 180,
+          "tpv": 360873.62,
+          "volume_share": 17.2,
+          "avg_cost": 25.96,
+          "avg_take_rate": 1.295,
+          "explicit_fees": 672.94,
+          "fx_markup": 3931.38,
+          "capital_cost": 68.12,
+          "avg_delay": 23.7
+        },
+        {
+          "name": "SelvaMoney",
+          "transactions": 162,
+          "tpv": 287775.56,
+          "volume_share": 13.7,
+          "avg_cost": 34.36,
+          "avg_take_rate": 1.935,
+          "explicit_fees": 868.65,
+          "fx_markup": 4609.1,
+          "capital_cost": 89.32,
+          "avg_delay": 37.8
+        },
+        {
+          "name": "NovaRemit",
+          "transactions": 491,
+          "tpv": 944856.95,
+          "volume_share": 45.0,
+          "avg_cost": 41.22,
+          "avg_take_rate": 2.142,
+          "explicit_fees": 2098.87,
+          "fx_markup": 17909.31,
+          "capital_cost": 231.06,
+          "avg_delay": 28.8
+        },
+        {
+          "name": "PacificWire",
+          "transactions": 114,
+          "tpv": 218291.91,
+          "volume_share": 10.4,
+          "avg_cost": 50.78,
+          "avg_take_rate": 2.652,
+          "explicit_fees": 677.41,
+          "fx_markup": 5033.38,
+          "capital_cost": 78.06,
+          "avg_delay": 44.4
+        },
+        {
+          "name": "PampaLink",
+          "transactions": 143,
+          "tpv": 289705.29,
+          "volume_share": 13.8,
+          "avg_cost": 57.4,
+          "avg_take_rate": 2.833,
+          "explicit_fees": 702.12,
+          "fx_markup": 7426.68,
+          "capital_cost": 79.17,
+          "avg_delay": 32.1
+        }
+      ]
+    },
+    {
+      "corridor": "CLP->PEN",
+      "tpv": 1272785.59,
+      "transactions": 688,
+      "avg_cost": 38.16,
+      "avg_take_rate": 2.063,
+      "cheapest_processor": "PacificWire",
+      "potential_savings": 8047.72,
+      "inefficient_processor": null,
+      "is_inefficient": false,
+      "processors": [
+        {
+          "name": "PacificWire",
+          "transactions": 204,
+          "tpv": 354370.52,
+          "volume_share": 27.8,
+          "avg_cost": 25.36,
+          "avg_take_rate": 1.46,
+          "explicit_fees": 1186.46,
+          "fx_markup": 3862.13,
+          "capital_cost": 125.81,
+          "avg_delay": 43.0
+        },
+        {
+          "name": "AndesPay",
+          "transactions": 134,
+          "tpv": 297900.33,
+          "volume_share": 23.4,
+          "avg_cost": 46.93,
+          "avg_take_rate": 2.111,
+          "explicit_fees": 516.36,
+          "fx_markup": 5718.66,
+          "capital_cost": 53.39,
+          "avg_delay": 22.2
+        },
+        {
+          "name": "PampaLink",
+          "transactions": 111,
+          "tpv": 185650.04,
+          "volume_share": 14.6,
+          "avg_cost": 35.32,
+          "avg_take_rate": 2.112,
+          "explicit_fees": 520.93,
+          "fx_markup": 3348.39,
+          "capital_cost": 50.87,
+          "avg_delay": 32.1
+        },
+        {
+          "name": "SelvaMoney",
+          "transactions": 119,
+          "tpv": 227902.6,
+          "volume_share": 17.9,
+          "avg_cost": 46.01,
+          "avg_take_rate": 2.402,
+          "explicit_fees": 652.94,
+          "fx_markup": 4748.6,
+          "capital_cost": 73.37,
+          "avg_delay": 37.9
+        },
+        {
+          "name": "NovaRemit",
+          "transactions": 120,
+          "tpv": 206962.1,
+          "volume_share": 16.3,
+          "avg_cost": 44.97,
+          "avg_take_rate": 2.607,
+          "explicit_fees": 501.81,
+          "fx_markup": 4839.85,
+          "capital_cost": 54.27,
+          "avg_delay": 30.8
+        }
+      ]
+    },
+    {
+      "corridor": "COP->PEN",
+      "tpv": 1489023.71,
+      "transactions": 728,
+      "avg_cost": 39.82,
+      "avg_take_rate": 1.947,
+      "cheapest_processor": "SelvaMoney",
+      "potential_savings": 7366.68,
+      "inefficient_processor": null,
+      "is_inefficient": false,
+      "processors": [
+        {
+          "name": "SelvaMoney",
+          "transactions": 333,
+          "tpv": 712844.0,
+          "volume_share": 47.9,
+          "avg_cost": 31.83,
+          "avg_take_rate": 1.487,
+          "explicit_fees": 1840.51,
+          "fx_markup": 8539.69,
+          "capital_cost": 220.63,
+          "avg_delay": 37.3
+        },
+        {
+          "name": "NovaRemit",
+          "transactions": 100,
+          "tpv": 195852.31,
+          "volume_share": 13.2,
+          "avg_cost": 38.34,
+          "avg_take_rate": 1.958,
+          "explicit_fees": 434.7,
+          "fx_markup": 3355.87,
+          "capital_cost": 43.35,
+          "avg_delay": 26.3
+        },
+        {
+          "name": "PacificWire",
+          "transactions": 112,
+          "tpv": 205944.75,
+          "volume_share": 13.8,
+          "avg_cost": 41.47,
+          "avg_take_rate": 2.255,
+          "explicit_fees": 662.28,
+          "fx_markup": 3907.25,
+          "capital_cost": 75.5,
+          "avg_delay": 42.2
+        },
+        {
+          "name": "AndesPay",
+          "transactions": 89,
+          "tpv": 171227.28,
+          "volume_share": 11.5,
+          "avg_cost": 46.25,
+          "avg_take_rate": 2.404,
+          "explicit_fees": 328.84,
+          "fx_markup": 3758.87,
+          "capital_cost": 28.23,
+          "avg_delay": 22.8
+        },
+        {
+          "name": "PampaLink",
+          "transactions": 94,
+          "tpv": 203155.37,
+          "volume_share": 13.6,
+          "avg_cost": 61.63,
+          "avg_take_rate": 2.852,
+          "explicit_fees": 467.21,
+          "fx_markup": 5266.96,
+          "capital_cost": 58.81,
+          "avg_delay": 34.9
+        }
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "corridor": "USD->MXN",
+      "from": "NovaRemit",
+      "to": "AndesPay",
+      "monthly_savings": 17487.12,
+      "current_take_rate": 2.116,
+      "target_take_rate": 1.295
+    },
+    {
+      "corridor": "MXN->COP",
+      "from": "AndesPay",
+      "to": "NovaRemit",
+      "monthly_savings": 15405.16,
+      "current_take_rate": 2.415,
+      "target_take_rate": 1.522
+    },
+    {
+      "corridor": "BRL->ARS",
+      "from": "NovaRemit",
+      "to": "PampaLink",
+      "monthly_savings": 13016.94,
+      "current_take_rate": 2.338,
+      "target_take_rate": 1.456
+    },
+    {
+      "corridor": "BRL->COP",
+      "from": "AndesPay",
+      "to": "NovaRemit",
+      "monthly_savings": 9031.62,
+      "current_take_rate": 2.362,
+      "target_take_rate": 1.64
+    }
+  ]
+}
