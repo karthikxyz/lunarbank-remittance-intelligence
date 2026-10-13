@@ -2,6 +2,10 @@
 
 A production-shaped assignment submission that turns raw cross-border transfer records into transaction-level cost accounting, corridor intelligence, and an interactive operations dashboard.
 
+**Live dashboard:** https://karthikxyz.github.io/lunarbank-remittance-intelligence/
+
+**Public repository:** https://github.com/karthikxyz/lunarbank-remittance-intelligence
+
 ## Evaluator quick path
 
 The fastest way to evaluate all three core requirements is:
