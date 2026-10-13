@@ -48,6 +48,10 @@ function ArrowIcon() {
   return <span aria-hidden="true">↗</span>;
 }
 
+function corridorLabel(value: string) {
+  return value.replace("->", " → ");
+}
+
 function SparkBars({ values }: { values: Analytics["daily_trend"] }) {
   const max = Math.max(...values.map((item) => item.take_rate), 1);
   const min = Math.min(...values.map((item) => item.take_rate));
@@ -325,7 +329,7 @@ function ProcessorComparison({ corridor }: { corridor: Corridor }) {
       <div className="panel-head">
         <div>
           <p className="eyebrow">SELECTED CORRIDOR</p>
-          <h2>{corridor.corridor.replace("->", " → ")}</h2>
+          <h2 id="selected-corridor-heading">{corridorLabel(corridor.corridor)}</h2>
           <p>{compact.format(corridor.tpv)} TPV · {number.format(corridor.transactions)} transfers</p>
         </div>
         <span className={corridor.is_inefficient ? "status risk" : "status good"}>
@@ -435,7 +439,13 @@ function RateWatch({ data, onSelect }: { data: Analytics; onSelect: (value: stri
               </p>
             </div>
             <b>+{alert.increase_pct.toFixed(1)}%</b>
-            <button onClick={() => onSelect(alert.corridor)}>Inspect</button>
+            <button
+              type="button"
+              aria-label={`Inspect ${corridorLabel(alert.corridor)}`}
+              onClick={() => onSelect(alert.corridor)}
+            >
+              Inspect
+            </button>
           </article>
         ))}
         {!data.alerts.length && (
@@ -488,7 +498,11 @@ function Recommendations({
               <span>EST. MONTHLY SAVINGS</span>
               <strong>{money.format(recommendation.monthly_savings)}</strong>
             </div>
-            <button onClick={() => onSelect(recommendation.corridor)}>
+            <button
+              type="button"
+              aria-label={`Inspect ${corridorLabel(recommendation.corridor)}`}
+              onClick={() => onSelect(recommendation.corridor)}
+            >
               Inspect corridor <ArrowIcon />
             </button>
           </article>
@@ -508,6 +522,9 @@ function Simulator({
   target: Processor;
 }) {
   const [shift, setShift] = useState(40);
+  const minimumShift = 10;
+  const maximumShift = 100;
+  const shiftStep = 5;
   const sourceTpv = corridor.tpv * source.volume_share / 100;
   const rateDifference = Math.max(0, source.avg_take_rate - target.avg_take_rate);
   const observedSourceSavings = sourceTpv * rateDifference / 100;
@@ -529,15 +546,34 @@ function Simulator({
       </div>
       <div className="slider">
         <label htmlFor="shift">VOLUME TO REROUTE <b>{shift}%</b></label>
-        <input
-          id="shift"
-          type="range"
-          min="10"
-          max="100"
-          step="5"
-          value={shift}
-          onInput={(event) => setShift(Number(event.currentTarget.value))}
-        />
+        <div className="slider-controls">
+          <button
+            type="button"
+            aria-label="Decrease rerouted volume by 5%"
+            disabled={shift === minimumShift}
+            onClick={() => setShift((value) => Math.max(minimumShift, value - shiftStep))}
+          >
+            −
+          </button>
+          <input
+            id="shift"
+            type="range"
+            min={minimumShift}
+            max={maximumShift}
+            step={shiftStep}
+            value={shift}
+            aria-valuetext={`${shift}% of volume`}
+            onChange={(event) => setShift(Number(event.currentTarget.value))}
+          />
+          <button
+            type="button"
+            aria-label="Increase rerouted volume by 5%"
+            disabled={shift === maximumShift}
+            onClick={() => setShift((value) => Math.min(maximumShift, value + shiftStep))}
+          >
+            +
+          </button>
+        </div>
         <div><span>10%</span><span>100%</span></div>
       </div>
       <div className="simulation-result">
@@ -560,7 +596,14 @@ export default function Dashboard({ data }: { data: Analytics }) {
 
   const inspectCorridor = (value: string) => {
     setSelected(value);
-    document.querySelector("#processors")?.scrollIntoView({ behavior: "smooth" });
+    window.requestAnimationFrame(() => {
+      const details = document.querySelector<HTMLElement>("#processors");
+      if (!details) return;
+
+      window.history.replaceState(null, "", "#processors");
+      details.scrollIntoView({ behavior: "smooth", block: "start" });
+      details.focus({ preventScroll: true });
+    });
   };
 
   return (
@@ -584,7 +627,12 @@ export default function Dashboard({ data }: { data: Analytics }) {
           onSelect={setSelected}
         />
 
-        <section className="detail-grid" id="processors">
+        <section
+          className="detail-grid"
+          id="processors"
+          aria-labelledby="selected-corridor-heading"
+          tabIndex={-1}
+        >
           <ProcessorComparison corridor={corridor} />
           <CostComposition corridor={corridor} source={source} />
         </section>
