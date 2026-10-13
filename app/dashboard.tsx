@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { type MouseEvent, useEffect, useMemo, useState } from "react";
 
 import type { Analytics, Corridor, Processor } from "./types";
 
@@ -52,6 +52,12 @@ function corridorLabel(value: string) {
   return value.replace("->", " → ");
 }
 
+function scrollToSection(event: MouseEvent<HTMLAnchorElement>, selector: string) {
+  event.preventDefault();
+  window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+  document.querySelector(selector)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function SparkBars({ values }: { values: Analytics["daily_trend"] }) {
   const max = Math.max(...values.map((item) => item.take_rate), 1);
   const min = Math.min(...values.map((item) => item.take_rate));
@@ -90,10 +96,16 @@ function Sidebar({ data }: { data: Analytics }) {
         <span>LunarBank</span>
       </div>
       <nav aria-label="Main navigation">
-        <a className="active" href="#overview"><span>⌁</span> Cost overview</a>
-        <a href="#corridors"><span>⇄</span> Corridors</a>
-        <a href="#processors"><span>◈</span> Processors</a>
-        <a href="#recommendations">
+        <a className="active" href="#overview" onClick={(event) => scrollToSection(event, "#overview")}>
+          <span>⌁</span> Cost overview
+        </a>
+        <a href="#corridors" onClick={(event) => scrollToSection(event, "#corridors")}>
+          <span>⇄</span> Corridors
+        </a>
+        <a href="#processors" onClick={(event) => scrollToSection(event, "#processors")}>
+          <span>◈</span> Processors
+        </a>
+        <a href="#recommendations" onClick={(event) => scrollToSection(event, "#recommendations")}>
           <span>◎</span> Recommendations <b>{data.summary.inefficient_corridors}</b>
         </a>
       </nav>
@@ -145,7 +157,12 @@ function SummaryBanner({ data }: { data: Analytics }) {
         </div>
         <SparkBars values={trend} />
       </div>
-      <a href="#recommendations">Review actions <ArrowIcon /></a>
+      <a
+        href="#recommendations"
+        onClick={(event) => scrollToSection(event, "#recommendations")}
+      >
+        Review actions <ArrowIcon />
+      </a>
     </section>
   );
 }
@@ -636,6 +653,11 @@ function Simulator({
 
 export default function Dashboard({ data }: { data: Analytics }) {
   const [selected, setSelected] = useState(data.corridors[0].corridor);
+  useEffect(() => {
+    if (window.location.hash) {
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    }
+  }, []);
   const corridor = data.corridors.find((item) => item.corridor === selected)
     ?? data.corridors[0];
   const best = corridor.processors[0];
@@ -649,7 +671,7 @@ export default function Dashboard({ data }: { data: Analytics }) {
       const details = document.querySelector<HTMLElement>("#processors");
       if (!details) return;
 
-      window.history.replaceState(null, "", "#processors");
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
       details.scrollIntoView({ behavior: "smooth", block: "start" });
       details.focus({ preventScroll: true });
     });
