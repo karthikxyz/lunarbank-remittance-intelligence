@@ -2,92 +2,603 @@
 
 import { useMemo, useState } from "react";
 
-type Processor = { name: string; transactions: number; tpv: number; volume_share: number; avg_cost: number; avg_take_rate: number; explicit_fees: number; fx_markup: number; capital_cost: number; avg_delay: number };
-type Corridor = { corridor: string; tpv: number; transactions: number; avg_cost: number; avg_take_rate: number; cheapest_processor: string; potential_savings: number; inefficient_processor: string | null; is_inefficient: boolean; processors: Processor[] };
-type Analytics = { period: string; summary: { tpv: number; transactions: number; avg_take_rate: number; total_cost: number; potential_savings: number; inefficient_corridors: number }; corridors: Corridor[]; recommendations: { corridor: string; from: string | null; to: string; monthly_savings: number; current_take_rate: number; target_take_rate: number }[] };
+import type { Analytics, Corridor, Processor } from "./types";
 
-const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
+const money = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+const compact = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
 const number = new Intl.NumberFormat("en-US");
+const shortDate = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
+const fullDate = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
-function ArrowIcon() { return <span aria-hidden="true">↗</span>; }
-function SparkBars({ values }: { values: number[] }) {
-  const max = Math.max(...values);
-  return <div className="spark" aria-label="Relative cost trend">{values.map((v, i) => <i key={i} style={{ height: `${Math.max(22, v / max * 100)}%` }} />)}</div>;
+function asUtcDate(value: string) {
+  return new Date(`${value}T00:00:00Z`);
 }
 
-export default function Dashboard({ data }: { data: Analytics }) {
-  const [selected, setSelected] = useState(data.corridors[0].corridor);
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<"cost" | "tpv" | "transactions">("cost");
-  const [showOnlyIssues, setShowOnlyIssues] = useState(false);
-  const [shift, setShift] = useState(40);
-  const corridor = data.corridors.find((item) => item.corridor === selected) ?? data.corridors[0];
-  const filtered = useMemo(() => data.corridors
-    .filter((item) => item.corridor.toLowerCase().includes(search.toLowerCase()))
-    .filter((item) => !showOnlyIssues || item.is_inefficient)
-    .sort((a, b) => sort === "tpv" ? b.tpv - a.tpv : sort === "transactions" ? b.transactions - a.transactions : b.avg_take_rate - a.avg_take_rate), [data.corridors, search, sort, showOnlyIssues]);
-  const best = corridor.processors[0];
-  const current = corridor.processors.find((p) => p.name === corridor.inefficient_processor) ?? corridor.processors.at(-1)!;
-  const simulatedSavings = corridor.potential_savings * shift / 100;
+function periodLabel(period: Analytics["period"]) {
+  const start = asUtcDate(period.start);
+  const end = asUtcDate(period.end);
+  if (start.getUTCMonth() === end.getUTCMonth()) {
+    return `${shortDate.format(start)}–${end.getUTCDate()}, ${end.getUTCFullYear()}`;
+  }
+  return `${shortDate.format(start)}–${fullDate.format(end)}`;
+}
 
-  return <main>
+function signed(value: number, suffix: string) {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(1)}${suffix}`;
+}
+
+function ArrowIcon() {
+  return <span aria-hidden="true">↗</span>;
+}
+
+function SparkBars({ values }: { values: Analytics["daily_trend"] }) {
+  const max = Math.max(...values.map((item) => item.take_rate), 1);
+  const min = Math.min(...values.map((item) => item.take_rate));
+  const spread = Math.max(max - min, max * 0.04);
+
+  return (
+    <div className="spark" aria-label="Daily effective take rate for the last 14 days">
+      {values.map((item) => {
+        const relativeHeight = 25 + ((item.take_rate - min) / spread) * 75;
+        return (
+          <i
+            key={item.date}
+            title={`${fullDate.format(asUtcDate(item.date))}: ${item.take_rate.toFixed(2)}%`}
+            style={{ height: `${Math.min(100, relativeHeight)}%` }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function Sidebar({ data }: { data: Analytics }) {
+  const refreshedAt = new Date(data.generated_at).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+    timeZoneName: "short",
+  });
+
+  return (
     <aside className="sidebar">
-      <div className="brand"><div className="moon">L</div><span>LunarBank</span></div>
+      <div className="brand">
+        <div className="moon">L</div>
+        <span>LunarBank</span>
+      </div>
       <nav aria-label="Main navigation">
         <a className="active" href="#overview"><span>⌁</span> Cost overview</a>
         <a href="#corridors"><span>⇄</span> Corridors</a>
         <a href="#processors"><span>◈</span> Processors</a>
-        <a href="#recommendations"><span>◎</span> Recommendations <b>{data.summary.inefficient_corridors}</b></a>
+        <a href="#recommendations">
+          <span>◎</span> Recommendations <b>{data.summary.inefficient_corridors}</b>
+        </a>
       </nav>
-      <div className="sidebar-note"><small>DATA QUALITY</small><strong>98.7% healthy</strong><p>Last refresh · Sep 30, 23:48 UTC</p></div>
-      <div className="profile"><div>AM</div><p><strong>Ana Morales</strong><small>Operations lead</small></p><span>•••</span></div>
+      <div className="sidebar-note">
+        <small>DATA QUALITY</small>
+        <strong>{data.summary.completion_rate.toFixed(1)}% completed</strong>
+        <p>{number.format(data.summary.input_transactions)} validated rows</p>
+        <p>Data through · {refreshedAt}</p>
+      </div>
+      <div className="profile">
+        <div>AM</div>
+        <p><strong>Ana Morales</strong><small>Operations lead</small></p>
+        <span>•••</span>
+      </div>
     </aside>
+  );
+}
 
-    <section className="content" id="overview">
-      <header className="topbar"><div><p className="eyebrow">OPERATIONS / COST INTELLIGENCE</p><h1>Remittance economics</h1><p>Find margin leaks, compare processors, and route every corridor with confidence.</p></div><div className="period"><span>●</span> Sep 1–30, 2026 <button aria-label="Change period">⌄</button></div></header>
+function SummaryBanner({ data }: { data: Analytics }) {
+  const trend = data.daily_trend.slice(-14);
+  const change = data.summary.take_rate_change_bps;
+  const comparisonAvailable = data.summary.comparison_available;
+  const trendClass = change > 0 ? "negative" : change < 0 ? "positive" : "neutral";
 
-      <section className="pulse" aria-label="Executive summary">
-        <div className="pulse-copy"><span className="live">LIVE OPPORTUNITY</span><h2>{money.format(data.summary.potential_savings)}</h2><p>recoverable every month with optimal routing</p><div className="pulse-detail"><strong>{data.summary.inefficient_corridors} corridors</strong> need attention <span>·</span> <strong>{(data.summary.potential_savings / data.summary.total_cost * 100).toFixed(1)}%</strong> of cost at risk</div></div>
-        <div className="pulse-chart"><div><small>30-DAY COST SIGNAL</small><strong>Take rate <em>+4.2 pts</em></strong></div><SparkBars values={[42, 38, 45, 40, 52, 49, 61, 57, 68, 63, 78, 88]} /></div>
-        <a href="#recommendations">Review actions <ArrowIcon /></a>
-      </section>
-
-      <section className="metrics" aria-label="Key metrics">
-        <article><small>TOTAL TPV</small><strong>{money.format(data.summary.tpv)}</strong><p><span className="up">↑ 18.0%</span> vs prior period</p></article>
-        <article><small>COMPLETED TRANSFERS</small><strong>{number.format(data.summary.transactions)}</strong><p>Across {data.corridors.length} active corridors</p></article>
-        <article><small>BLENDED TAKE RATE</small><strong>{data.summary.avg_take_rate.toFixed(2)}%</strong><p><span className="down">↑ 42 bps</span> above target</p></article>
-        <article><small>ALL-IN COST</small><strong>{money.format(data.summary.total_cost)}</strong><p>{money.format(data.summary.total_cost / data.summary.transactions)} per transfer</p></article>
-      </section>
-
-      <section className="panel corridor-panel" id="corridors">
-        <div className="panel-head"><div><p className="eyebrow">PORTFOLIO VIEW</p><h2>Corridor economics</h2><p>Ranked by effective take rate. Select a row to investigate.</p></div><div className="tools"><label className="search"><span>⌕</span><input aria-label="Search corridors" placeholder="Find corridor" value={search} onChange={(e) => setSearch(e.target.value)} /></label><select aria-label="Sort corridors" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}><option value="cost">Highest cost</option><option value="tpv">Highest TPV</option><option value="transactions">Most transfers</option></select><button className={showOnlyIssues ? "filter active-filter" : "filter"} onClick={() => setShowOnlyIssues(!showOnlyIssues)}>⚑ Needs action</button></div></div>
-        <div className="table-wrap"><table><thead><tr><th>Corridor</th><th>Monthly TPV</th><th>Transfers</th><th>Take rate</th><th>Best route</th><th>Routing health</th><th></th></tr></thead><tbody>{filtered.map((item) => <tr key={item.corridor} className={selected === item.corridor ? "selected" : ""} onClick={() => setSelected(item.corridor)}><td><div className="route"><span>{item.corridor.slice(0,3)}</span><i>→</i><span>{item.corridor.slice(-3)}</span></div></td><td><strong>{money.format(item.tpv)}</strong></td><td>{number.format(item.transactions)}</td><td><div className="rate"><strong>{item.avg_take_rate.toFixed(2)}%</strong><span><i style={{width: `${Math.min(100, item.avg_take_rate / 4 * 100)}%`}} /></span></div></td><td><span className="processor-dot" />{item.cheapest_processor}</td><td>{item.is_inefficient ? <span className="status risk">Action needed</span> : <span className="status good">Optimized</span>}</td><td>›</td></tr>)}</tbody></table></div>
-      </section>
-
-      <section className="detail-grid" id="processors">
-        <article className="panel processor-panel">
-          <div className="panel-head"><div><p className="eyebrow">SELECTED CORRIDOR</p><h2>{corridor.corridor.replace("->", " → ")}</h2><p>{compact.format(corridor.tpv)} TPV · {number.format(corridor.transactions)} transfers</p></div><span className={corridor.is_inefficient ? "status risk" : "status good"}>{corridor.is_inefficient ? "Routing leak" : "Healthy"}</span></div>
-          <div className="processor-list"><div className="processor-header"><span>Processor</span><span>Volume</span><span>Avg cost</span><span>Take rate</span></div>{corridor.processors.map((p, index) => <div className="processor-row" key={p.name}><div><span className={`rank rank-${index + 1}`}>{index + 1}</span><p><strong>{p.name}</strong><small>{p.avg_delay}h settlement</small></p></div><div><strong>{p.volume_share.toFixed(1)}%</strong><span className="share"><i style={{width: `${p.volume_share}%`}} /></span></div><strong>{money.format(p.avg_cost)}</strong><div><strong>{p.avg_take_rate.toFixed(2)}%</strong>{index === 0 && <small className="best">BEST</small>}</div></div>)}</div>
-        </article>
-
-        <article className="panel composition">
-          <div className="panel-head"><div><p className="eyebrow">COST ANATOMY</p><h2>Where every dollar goes</h2><p>Cost mix by processor for {corridor.corridor.replace("->", " → ")}.</p></div></div>
-          <div className="legend"><span><i className="fee" /> Fees</span><span><i className="fx" /> FX markup</span><span><i className="capital" /> Capital</span></div>
-          <div className="cost-bars">{corridor.processors.map((p) => { const total = p.explicit_fees + p.fx_markup + p.capital_cost; return <div className="cost-row" key={p.name}><strong>{p.name}</strong><div className="stack"><i className="fee" style={{width: `${p.explicit_fees/total*100}%`}} /><i className="fx" style={{width: `${p.fx_markup/total*100}%`}} /><i className="capital" style={{width: `${p.capital_cost/total*100}%`}} /></div><span>{p.avg_take_rate.toFixed(2)}%</span></div>})}</div>
-          <div className="insight"><span>!</span><p><strong>FX spread is the margin drain.</strong> It represents {Math.round(current.fx_markup / (current.explicit_fees + current.fx_markup + current.capital_cost) * 100)}% of {current.name}’s cost in this corridor.</p></div>
-        </article>
-      </section>
-
-      <section className="recommendations" id="recommendations">
-        <div className="section-title"><div><p className="eyebrow">ROUTING PLAYBOOK</p><h2>Turn leakage into margin</h2><p>Prioritized by estimated monthly savings, assuming current volume.</p></div><span>{money.format(data.summary.potential_savings)} total upside</span></div>
-        <div className="rec-grid">{data.recommendations.slice(0,3).map((rec, index) => <article key={rec.corridor}><div className="rec-top"><span>0{index + 1}</span><div className="route"><b>{rec.corridor.slice(0,3)}</b><i>→</i><b>{rec.corridor.slice(-3)}</b></div><small>{index === 0 ? "HIGH IMPACT" : "ROUTING SHIFT"}</small></div><h3>Move volume to {rec.to}</h3><p>Reduce exposure to {rec.from}; the effective rate falls by <strong>{(rec.current_take_rate - rec.target_take_rate).toFixed(2)} pts</strong>.</p><div className="savings"><span>EST. MONTHLY SAVINGS</span><strong>{money.format(rec.monthly_savings)}</strong></div><button onClick={() => { setSelected(rec.corridor); document.querySelector("#processors")?.scrollIntoView({behavior:"smooth"}); }}>Inspect corridor <ArrowIcon /></button></article>)}</div>
-      </section>
-
-      <section className="panel simulator">
-        <div><p className="eyebrow">SCENARIO LAB</p><h2>What if we shift {shift}%?</h2><p>Model a volume move in {corridor.corridor.replace("->", " → ")} from <strong>{current.name}</strong> to <strong>{best.name}</strong>.</p></div><div className="slider"><label htmlFor="shift">VOLUME TO REROUTE <b>{shift}%</b></label><input id="shift" type="range" min="10" max="100" step="5" value={shift} onChange={(e) => setShift(Number(e.target.value))} /><div><span>10%</span><span>100%</span></div></div><div className="simulation-result"><small>PROJECTED MONTHLY IMPACT</small><strong>+{money.format(simulatedSavings)}</strong><p>to contribution margin</p></div>
-      </section>
-      <footer><span>LunarBank Cost Intelligence</span><p>Completed transfers only · Costs normalized to USD · Static market-rate reference</p><a href="/analytics.json" download>Download analytics ↘</a></footer>
+  return (
+    <section className="pulse" aria-label="Executive summary">
+      <div className="pulse-copy">
+        <span className="live">MONTHLY OPTIMIZATION CEILING</span>
+        <h2>{money.format(data.summary.optimization_savings)}</h2>
+        <p>if every transfer matched the best observed corridor rate</p>
+        <div className="pulse-detail">
+          <strong>{money.format(data.summary.actionable_savings)}</strong> tied to {" "}
+          <strong>{data.summary.inefficient_corridors} flagged routes</strong>
+          <span>·</span>
+          <strong>
+            {(data.summary.optimization_savings / data.summary.total_cost * 100).toFixed(1)}%
+          </strong> of cost
+        </div>
+      </div>
+      <div className="pulse-chart">
+        <div>
+          <small>14-DAY TAKE-RATE SIGNAL</small>
+          <strong>
+            {comparisonAvailable ? "vs prior 7d " : "Awaiting 14 days "}
+            {comparisonAvailable && (
+              <em className={trendClass}>{signed(change, " bps")}</em>
+            )}
+          </strong>
+        </div>
+        <SparkBars values={trend} />
+      </div>
+      <a href="#recommendations">Review actions <ArrowIcon /></a>
     </section>
-  </main>;
+  );
+}
+
+function Metrics({ data }: { data: Analytics }) {
+  const tpvChange = data.summary.tpv_change_pct;
+  const rateChange = data.summary.take_rate_change_bps;
+  const comparisonAvailable = data.summary.comparison_available;
+
+  return (
+    <section className="metrics" aria-label="Key metrics">
+      <article>
+        <small>TOTAL TPV</small>
+        <strong>{money.format(data.summary.tpv)}</strong>
+        <p>
+          {comparisonAvailable ? (
+            <><span className={tpvChange >= 0 ? "up" : "down"}>
+              {signed(tpvChange, "%")}
+            </span> last 7d vs prior 7d</>
+          ) : "Insufficient history for comparison"}
+        </p>
+      </article>
+      <article>
+        <small>COMPLETED TRANSFERS</small>
+        <strong>{number.format(data.summary.transactions)}</strong>
+        <p>
+          {data.summary.completion_rate.toFixed(1)}% of {" "}
+          {number.format(data.summary.input_transactions)} input rows
+        </p>
+      </article>
+      <article>
+        <small>BLENDED TAKE RATE</small>
+        <strong>{data.summary.avg_take_rate.toFixed(2)}%</strong>
+        <p>
+          {comparisonAvailable ? (
+            <><span className={rateChange > 0 ? "down" : "up"}>
+              {signed(rateChange, " bps")}
+            </span> last 7d vs prior 7d</>
+          ) : "Insufficient history for comparison"}
+        </p>
+      </article>
+      <article>
+        <small>ALL-IN COST</small>
+        <strong>{money.format(data.summary.total_cost)}</strong>
+        <p>{money.format(data.summary.total_cost / data.summary.transactions)} per transfer</p>
+      </article>
+    </section>
+  );
+}
+
+type SortOption = "cost" | "tpv" | "transactions";
+
+function CorridorTable({
+  corridors,
+  selected,
+  onSelect,
+}: {
+  corridors: Corridor[];
+  selected: string;
+  onSelect: (corridor: string) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<SortOption>("cost");
+  const [showOnlyIssues, setShowOnlyIssues] = useState(false);
+  const filtered = useMemo(
+    () => corridors
+      .filter((item) => item.corridor.toLowerCase().includes(search.toLowerCase()))
+      .filter((item) => !showOnlyIssues || item.is_inefficient)
+      .sort((a, b) => {
+        if (sort === "tpv") return b.tpv - a.tpv;
+        if (sort === "transactions") return b.transactions - a.transactions;
+        return b.avg_take_rate - a.avg_take_rate;
+      }),
+    [corridors, search, sort, showOnlyIssues],
+  );
+
+  return (
+    <section className="panel corridor-panel" id="corridors">
+      <div className="panel-head">
+        <div>
+          <p className="eyebrow">PORTFOLIO VIEW</p>
+          <h2>Corridor economics</h2>
+          <p>Ranked by effective take rate. Select a row to investigate.</p>
+        </div>
+        <div className="tools">
+          <label className="search">
+            <span>⌕</span>
+            <input
+              aria-label="Search corridors"
+              placeholder="Find corridor"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </label>
+          <select
+            aria-label="Sort corridors"
+            value={sort}
+            onChange={(event) => setSort(event.target.value as SortOption)}
+          >
+            <option value="cost">Highest cost</option>
+            <option value="tpv">Highest TPV</option>
+            <option value="transactions">Most transfers</option>
+          </select>
+          <button
+            className={showOnlyIssues ? "filter active-filter" : "filter"}
+            aria-pressed={showOnlyIssues}
+            onClick={() => setShowOnlyIssues(!showOnlyIssues)}
+          >
+            ⚑ Needs action
+          </button>
+        </div>
+      </div>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Corridor</th>
+              <th>Monthly TPV</th>
+              <th>Transfers</th>
+              <th>Take rate</th>
+              <th>Best route</th>
+              <th>Routing health</th>
+              <th aria-label="Select" />
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((item) => (
+              <tr
+                key={item.corridor}
+                className={selected === item.corridor ? "selected" : ""}
+                tabIndex={0}
+                onClick={() => onSelect(item.corridor)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onSelect(item.corridor);
+                  }
+                }}
+              >
+                <td>
+                  <div className="route">
+                    <span>{item.corridor.slice(0, 3)}</span>
+                    <i>→</i>
+                    <span>{item.corridor.slice(-3)}</span>
+                  </div>
+                </td>
+                <td><strong>{money.format(item.tpv)}</strong></td>
+                <td>{number.format(item.transactions)}</td>
+                <td>
+                  <div className="rate">
+                    <strong>{item.avg_take_rate.toFixed(2)}%</strong>
+                    <span>
+                      <i style={{ width: `${Math.min(100, item.avg_take_rate / 4 * 100)}%` }} />
+                    </span>
+                  </div>
+                </td>
+                <td><span className="processor-dot" />{item.cheapest_processor}</td>
+                <td>
+                  {item.is_inefficient
+                    ? <span className="status risk">Action needed</span>
+                    : <span className="status good">Optimized</span>}
+                </td>
+                <td>›</td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr className="empty-row">
+                <td colSpan={7}>No corridors match these filters.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function ProcessorComparison({ corridor }: { corridor: Corridor }) {
+  return (
+    <article className="panel processor-panel">
+      <div className="panel-head">
+        <div>
+          <p className="eyebrow">SELECTED CORRIDOR</p>
+          <h2>{corridor.corridor.replace("->", " → ")}</h2>
+          <p>{compact.format(corridor.tpv)} TPV · {number.format(corridor.transactions)} transfers</p>
+        </div>
+        <span className={corridor.is_inefficient ? "status risk" : "status good"}>
+          {corridor.is_inefficient ? "Routing leak" : "Healthy"}
+        </span>
+      </div>
+      <div className="processor-list">
+        <div className="processor-header">
+          <span>Processor</span><span>Volume</span><span>Avg cost</span><span>Take rate</span>
+        </div>
+        {corridor.processors.map((processor, index) => (
+          <div className="processor-row" key={processor.name}>
+            <div>
+              <span className={`rank rank-${index + 1}`}>{index + 1}</span>
+              <p>
+                <strong>{processor.name}</strong>
+                <small>{processor.avg_delay}h settlement</small>
+              </p>
+            </div>
+            <div>
+              <strong>{processor.volume_share.toFixed(1)}%</strong>
+              <span className="share"><i style={{ width: `${processor.volume_share}%` }} /></span>
+            </div>
+            <strong>{money.format(processor.avg_cost)}</strong>
+            <div>
+              <strong>{processor.avg_take_rate.toFixed(2)}%</strong>
+              {index === 0 && <small className="best">BEST</small>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </article>
+  );
+}
+
+function CostComposition({
+  corridor,
+  source,
+}: {
+  corridor: Corridor;
+  source: Processor;
+}) {
+  const sourceTotal = source.explicit_fees + source.fx_markup + source.capital_cost;
+
+  return (
+    <article className="panel composition">
+      <div className="panel-head">
+        <div>
+          <p className="eyebrow">COST ANATOMY</p>
+          <h2>Where every dollar goes</h2>
+          <p>Cost mix by processor for {corridor.corridor.replace("->", " → ")}.</p>
+        </div>
+      </div>
+      <div className="legend">
+        <span><i className="fee" /> Fees</span>
+        <span><i className="fx" /> FX markup</span>
+        <span><i className="capital" /> Capital</span>
+      </div>
+      <div className="cost-bars">
+        {corridor.processors.map((processor) => {
+          const total = processor.explicit_fees + processor.fx_markup + processor.capital_cost;
+          return (
+            <div className="cost-row" key={processor.name}>
+              <strong>{processor.name}</strong>
+              <div className="stack">
+                <i className="fee" style={{ width: `${processor.explicit_fees / total * 100}%` }} />
+                <i className="fx" style={{ width: `${processor.fx_markup / total * 100}%` }} />
+                <i className="capital" style={{ width: `${processor.capital_cost / total * 100}%` }} />
+              </div>
+              <span>{processor.avg_take_rate.toFixed(2)}%</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="insight">
+        <span>!</span>
+        <p>
+          <strong>FX spread is the main cost driver.</strong> It represents {" "}
+          {Math.round(source.fx_markup / sourceTotal * 100)}% of {source.name}’s cost
+          in this corridor.
+        </p>
+      </div>
+    </article>
+  );
+}
+
+function RateWatch({ data, onSelect }: { data: Analytics; onSelect: (value: string) => void }) {
+  return (
+    <section className="panel rate-watch" aria-label="Processor rate alerts">
+      <div>
+        <p className="eyebrow">AUTOMATED RATE WATCH</p>
+        <h2>{data.alerts.length ? `${data.alerts.length} cost spike detected` : "No cost spikes detected"}</h2>
+        <p>
+          Compares each processor route’s latest {data.alerting.window_days} days with the prior {" "}
+          {data.alerting.window_days}; alerts above {data.alerting.threshold_pct}%.
+        </p>
+      </div>
+      <div className="alert-list">
+        {data.alerts.map((alert) => (
+          <article key={`${alert.corridor}-${alert.processor}`}>
+            <span className="alert-icon">!</span>
+            <div>
+              <strong>{alert.processor} · {alert.corridor.replace("->", " → ")}</strong>
+              <p>
+                Take rate rose from {alert.previous_take_rate.toFixed(2)}% to {" "}
+                {alert.current_take_rate.toFixed(2)}% across {alert.recent_transactions} recent transfers.
+              </p>
+            </div>
+            <b>+{alert.increase_pct.toFixed(1)}%</b>
+            <button onClick={() => onSelect(alert.corridor)}>Inspect</button>
+          </article>
+        ))}
+        {!data.alerts.length && (
+          <p className="no-alerts">
+            {data.alerting.monitored_processor_routes} processor routes are within threshold.
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Recommendations({
+  data,
+  onSelect,
+}: {
+  data: Analytics;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <section className="recommendations" id="recommendations">
+      <div className="section-title">
+        <div>
+          <p className="eyebrow">ROUTING PLAYBOOK</p>
+          <h2>Turn leakage into margin</h2>
+          <p>Only volume breaching the brief’s &gt;30% non-cheapest routing rule is counted.</p>
+        </div>
+        <span>{money.format(data.summary.actionable_savings)} actionable upside</span>
+      </div>
+      <div className="rec-grid">
+        {data.recommendations.map((recommendation, index) => (
+          <article key={recommendation.corridor}>
+            <div className="rec-top">
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <div className="route">
+                <b>{recommendation.corridor.slice(0, 3)}</b>
+                <i>→</i>
+                <b>{recommendation.corridor.slice(-3)}</b>
+              </div>
+              <small>{index === 0 ? "HIGH IMPACT" : "ROUTING SHIFT"}</small>
+            </div>
+            <h3>Move volume to {recommendation.to}</h3>
+            <p>
+              Reduce exposure to {recommendation.from}; its observed take rate is {" "}
+              <strong>
+                {(recommendation.current_take_rate - recommendation.target_take_rate).toFixed(2)} pts
+              </strong> above the best route.
+            </p>
+            <div className="savings">
+              <span>EST. MONTHLY SAVINGS</span>
+              <strong>{money.format(recommendation.monthly_savings)}</strong>
+            </div>
+            <button onClick={() => onSelect(recommendation.corridor)}>
+              Inspect corridor <ArrowIcon />
+            </button>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Simulator({
+  corridor,
+  source,
+  target,
+}: {
+  corridor: Corridor;
+  source: Processor;
+  target: Processor;
+}) {
+  const [shift, setShift] = useState(40);
+  const sourceTpv = corridor.tpv * source.volume_share / 100;
+  const rateDifference = Math.max(0, source.avg_take_rate - target.avg_take_rate);
+  const observedSourceSavings = sourceTpv * rateDifference / 100;
+  const fullShiftSavings = corridor.is_inefficient
+    ? corridor.routing_savings
+    : observedSourceSavings;
+  const simulatedSavings = fullShiftSavings * shift / 100;
+
+  return (
+    <section className="panel simulator">
+      <div>
+        <p className="eyebrow">SCENARIO LAB</p>
+        <h2>What if we shift {shift}%?</h2>
+        <p>
+          Model a volume move in {corridor.corridor.replace("->", " → ")} from {" "}
+          <strong>{source.name}</strong> to <strong>{target.name}</strong>.
+          {!corridor.is_inefficient && " This corridor is not currently flagged."}
+        </p>
+      </div>
+      <div className="slider">
+        <label htmlFor="shift">VOLUME TO REROUTE <b>{shift}%</b></label>
+        <input
+          id="shift"
+          type="range"
+          min="10"
+          max="100"
+          step="5"
+          value={shift}
+          onInput={(event) => setShift(Number(event.currentTarget.value))}
+        />
+        <div><span>10%</span><span>100%</span></div>
+      </div>
+      <div className="simulation-result">
+        <small>PROJECTED MONTHLY IMPACT</small>
+        <strong>+{money.format(simulatedSavings)}</strong>
+        <p>to contribution margin</p>
+      </div>
+    </section>
+  );
+}
+
+export default function Dashboard({ data }: { data: Analytics }) {
+  const [selected, setSelected] = useState(data.corridors[0].corridor);
+  const corridor = data.corridors.find((item) => item.corridor === selected)
+    ?? data.corridors[0];
+  const best = corridor.processors[0];
+  const source = corridor.processors.find(
+    (processor) => processor.name === corridor.inefficient_processor,
+  ) ?? corridor.processors[corridor.processors.length - 1];
+
+  const inspectCorridor = (value: string) => {
+    setSelected(value);
+    document.querySelector("#processors")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  return (
+    <main>
+      <Sidebar data={data} />
+      <section className="content" id="overview">
+        <header className="topbar">
+          <div>
+            <p className="eyebrow">OPERATIONS / COST INTELLIGENCE</p>
+            <h1>Remittance economics</h1>
+            <p>Find margin leaks, compare processors, and route every corridor with confidence.</p>
+          </div>
+          <div className="period"><span>●</span> {periodLabel(data.period)}</div>
+        </header>
+
+        <SummaryBanner data={data} />
+        <Metrics data={data} />
+        <CorridorTable
+          corridors={data.corridors}
+          selected={selected}
+          onSelect={setSelected}
+        />
+
+        <section className="detail-grid" id="processors">
+          <ProcessorComparison corridor={corridor} />
+          <CostComposition corridor={corridor} source={source} />
+        </section>
+
+        <RateWatch data={data} onSelect={inspectCorridor} />
+        <Recommendations data={data} onSelect={inspectCorridor} />
+        <Simulator corridor={corridor} source={source} target={best} />
+
+        <footer>
+          <span>LunarBank Cost Intelligence</span>
+          <p>Completed transfers only · USD-equivalent portfolio · Static reference rates</p>
+          <a href="analytics.json" download>Download analytics ↘</a>
+        </footer>
+      </section>
+    </main>
+  );
 }

@@ -1,4 +1,4 @@
-import { cp, mkdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 
@@ -17,15 +17,41 @@ const response = await worker.fetch(
 if (!response.ok) throw new Error(`Static render failed with status ${response.status}`);
 
 let html = await response.text();
-for (const asset of ["assets", "analytics.json", "favicon.svg", "file.svg", "globe.svg", "og.png", "window.svg"]) {
+const publicAssets = [
+  "assets",
+  "analytics.json",
+  "favicon.svg",
+  "file.svg",
+  "globe.svg",
+  "og-v2.png",
+  "og.png",
+  "window.svg",
+];
+for (const asset of publicAssets) {
   html = html.replaceAll(`/${asset}`, `${basePath}/${asset}`);
 }
 html = html.replaceAll("http://localhost:3000", `https://karthikxyz.github.io${basePath}`);
+html = html.replaceAll(`${basePath}${basePath}/`, `${basePath}/`);
 
 const output = path.join(root, "docs");
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await cp(path.join(root, "dist/client"), output, { recursive: true });
+
+// Vite's dynamic-preload dependency map uses root-relative asset lookups at
+// runtime. Prefix those entries as well as the server-rendered HTML so GitHub
+// Pages never makes a second, failing request to /assets at the account root.
+const assetsDirectory = path.join(output, "assets");
+for (const filename of await readdir(assetsDirectory)) {
+  if (!filename.endsWith(".js")) continue;
+  const assetPath = path.join(assetsDirectory, filename);
+  const source = await readFile(assetPath, "utf8");
+  const rewritten = source
+    .replaceAll('"assets/', `"${basePath}/assets/`)
+    .replaceAll("`assets/", `\`${basePath}/assets/`);
+  if (rewritten !== source) await writeFile(assetPath, rewritten, "utf8");
+}
+
 await writeFile(path.join(output, "index.html"), html, "utf8");
 await writeFile(path.join(output, ".nojekyll"), "", "utf8");
 console.log(`Exported GitHub Pages site to ${output}`);

@@ -19,5 +19,10 @@ test("server-renders LunarBank dashboard content", async () => {
   assert.match(html, /Remittance economics/);
   assert.match(html, /Corridor economics/);
   assert.match(html, /Routing playbook/i);
+  assert.match(html, /MONTHLY OPTIMIZATION CEILING/);
+  assert.match(html, /AUTOMATED RATE WATCH/);
+  assert.equal(html.match(/EST\. MONTHLY SAVINGS/g)?.length, 4);
+  assert.match(html, /href="analytics\.json"/);
+  assert.doesNotMatch(html, /98\.7% healthy|18\.0%|\+4\.2 pts/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/);
 });
