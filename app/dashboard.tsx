@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { Analytics, Corridor, Processor } from "./types";
 
@@ -522,15 +522,20 @@ function Simulator({
   target: Processor;
 }) {
   const [shift, setShift] = useState(40);
-  const sliderRef = useRef<HTMLInputElement>(null);
   const minimumShift = 10;
   const maximumShift = 100;
   const shiftStep = 5;
   const updateShift = (nextValue: number) => {
     const nextShift = Math.min(maximumShift, Math.max(minimumShift, nextValue));
-    if (sliderRef.current) sliderRef.current.value = String(nextShift);
     setShift(nextShift);
   };
+  const updateShiftFromPointer = (clientX: number, track: HTMLDivElement) => {
+    const bounds = track.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (clientX - bounds.left) / bounds.width));
+    const rawValue = minimumShift + ratio * (maximumShift - minimumShift);
+    updateShift(Math.round(rawValue / shiftStep) * shiftStep);
+  };
+  const sliderProgress = (shift - minimumShift) / (maximumShift - minimumShift) * 100;
   const sourceTpv = corridor.tpv * source.volume_share / 100;
   const rateDifference = Math.max(0, source.avg_take_rate - target.avg_take_rate);
   const observedSourceSavings = sourceTpv * rateDifference / 100;
@@ -551,7 +556,9 @@ function Simulator({
         </p>
       </div>
       <div className="slider">
-        <label htmlFor="shift">VOLUME TO REROUTE <b>{shift}%</b></label>
+        <div className="slider-label" id="shift-label">
+          VOLUME TO REROUTE <b>{shift}%</b>
+        </div>
         <div className="slider-controls">
           <button
             type="button"
@@ -561,19 +568,52 @@ function Simulator({
           >
             −
           </button>
-          <input
+          <div
             id="shift"
-            ref={sliderRef}
-            type="range"
-            min={minimumShift}
-            max={maximumShift}
-            step={shiftStep}
-            defaultValue={shift}
+            className="slider-track"
+            role="slider"
+            tabIndex={0}
+            aria-labelledby="shift-label"
+            aria-valuemin={minimumShift}
+            aria-valuemax={maximumShift}
+            aria-valuenow={shift}
             aria-valuetext={`${shift}% of volume`}
-            onInput={(event) => updateShift(Number(event.currentTarget.value))}
-            onChange={(event) => updateShift(Number(event.currentTarget.value))}
-            onPointerUp={(event) => updateShift(Number(event.currentTarget.value))}
-          />
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.currentTarget.focus();
+              event.currentTarget.setPointerCapture(event.pointerId);
+              updateShiftFromPointer(event.clientX, event.currentTarget);
+            }}
+            onPointerMove={(event) => {
+              if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                updateShiftFromPointer(event.clientX, event.currentTarget);
+              }
+            }}
+            onPointerUp={(event) => {
+              updateShiftFromPointer(event.clientX, event.currentTarget);
+              if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                event.currentTarget.releasePointerCapture(event.pointerId);
+              }
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+                event.preventDefault();
+                updateShift(shift - shiftStep);
+              } else if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+                event.preventDefault();
+                updateShift(shift + shiftStep);
+              } else if (event.key === "Home") {
+                event.preventDefault();
+                updateShift(minimumShift);
+              } else if (event.key === "End") {
+                event.preventDefault();
+                updateShift(maximumShift);
+              }
+            }}
+          >
+            <span className="slider-track-fill" style={{ width: `${sliderProgress}%` }} />
+            <span className="slider-track-thumb" style={{ left: `${sliderProgress}%` }} />
+          </div>
           <button
             type="button"
             aria-label="Increase rerouted volume by 5%"
